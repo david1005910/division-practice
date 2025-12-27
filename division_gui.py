@@ -241,7 +241,7 @@ class DivisionPracticeGUI:
             text="확인",
             font=self.button_font,
             bg="#4ECDC4",
-            fg="white",
+            fg="#333333",
             command=self.check_answer,
             padx=20,
             pady=5
@@ -276,7 +276,7 @@ class DivisionPracticeGUI:
             text="🎯 시작하기",
             font=self.button_font,
             bg="#FF6B6B",
-            fg="white",
+            fg="#333333",
             command=self.start_quiz,
             padx=30,
             pady=10
@@ -287,7 +287,7 @@ class DivisionPracticeGUI:
             text="다음 문제 ➡️",
             font=self.button_font,
             bg="#4ECDC4",
-            fg="white",
+            fg="#333333",
             command=self.next_problem,
             padx=30,
             pady=10
@@ -309,7 +309,7 @@ class DivisionPracticeGUI:
             text="🔄 다시 시작",
             font=self.button_font,
             bg="#FF6B6B",
-            fg="white",
+            fg="#333333",
             command=self.show_start_screen,
             padx=30,
             pady=10
@@ -321,7 +321,7 @@ class DivisionPracticeGUI:
             text="🔄 틀린 문제 다시 풀기",
             font=self.button_font,
             bg="#FF9800",
-            fg="white",
+            fg="#333333",
             command=self.retry_wrong_problems,
             padx=20,
             pady=10
@@ -333,7 +333,7 @@ class DivisionPracticeGUI:
             text="💾 점수 저장",
             font=self.button_font,
             bg="#2196F3",
-            fg="white",
+            fg="#333333",
             command=self.save_current_score,
             padx=20,
             pady=10
@@ -345,7 +345,7 @@ class DivisionPracticeGUI:
             text="📊 기록 보기",
             font=self.button_font,
             bg="#9C27B0",
-            fg="white",
+            fg="#333333",
             command=self.show_score_history,
             padx=20,
             pady=10
@@ -371,7 +371,7 @@ class DivisionPracticeGUI:
             text="➗ 나눗셈",
             font=self.title_font,
             bg="#FF6B6B",
-            fg="white",
+            fg="#333333",
             command=lambda: self.select_mode("division"),
             padx=30,
             pady=20
@@ -383,7 +383,7 @@ class DivisionPracticeGUI:
             text="✖️ 곱셈",
             font=self.title_font,
             bg="#4ECDC4",
-            fg="white",
+            fg="#333333",
             command=lambda: self.select_mode("multiplication"),
             padx=30,
             pady=20
@@ -432,7 +432,7 @@ class DivisionPracticeGUI:
                 text=f"{num}",
                 font=self.title_font,
                 bg=colors[num],
-                fg="white",
+                fg="#333333",
                 command=lambda n=num: self.select_number(n),
                 padx=25,
                 pady=15
@@ -460,7 +460,7 @@ class DivisionPracticeGUI:
             text="➗ 2",
             font=self.title_font,
             bg="#FF6B6B",
-            fg="white",
+            fg="#333333",
             command=lambda: self.select_divisor(2),
             padx=20,
             pady=15
@@ -472,7 +472,7 @@ class DivisionPracticeGUI:
             text="➗ 3",
             font=self.title_font,
             bg="#4ECDC4",
-            fg="white",
+            fg="#333333",
             command=lambda: self.select_divisor(3),
             padx=20,
             pady=15
@@ -512,7 +512,7 @@ class DivisionPracticeGUI:
             text="➗ 6",
             font=self.title_font,
             bg="#DDA0DD",
-            fg="white",
+            fg="#333333",
             command=lambda: self.select_divisor(6),
             padx=20,
             pady=15
@@ -524,7 +524,7 @@ class DivisionPracticeGUI:
             text="➗ 7",
             font=self.title_font,
             bg="#9370DB",
-            fg="white",
+            fg="#333333",
             command=lambda: self.select_divisor(7),
             padx=20,
             pady=15
@@ -536,7 +536,7 @@ class DivisionPracticeGUI:
             text="➗ 8",
             font=self.title_font,
             bg="#8A2BE2",
-            fg="white",
+            fg="#333333",
             command=lambda: self.select_divisor(8),
             padx=20,
             pady=15
@@ -548,7 +548,7 @@ class DivisionPracticeGUI:
             text="➗ 9",
             font=self.title_font,
             bg="#7B68EE",
-            fg="white",
+            fg="#333333",
             command=lambda: self.select_divisor(9),
             padx=20,
             pady=15
@@ -560,7 +560,7 @@ class DivisionPracticeGUI:
             text="➗ 10",
             font=self.title_font,
             bg="#6A5ACD",
-            fg="white",
+            fg="#333333",
             command=lambda: self.select_divisor(10),
             padx=18,
             pady=15
@@ -600,7 +600,7 @@ class DivisionPracticeGUI:
             text="20문제",
             font=self.title_font,
             bg="#6BC5A0",
-            fg="white",
+            fg="#333333",
             command=lambda: self.start_quiz(20),
             padx=20,
             pady=15
@@ -612,7 +612,7 @@ class DivisionPracticeGUI:
             text="50문제",
             font=self.title_font,
             bg="#4A9F8E",
-            fg="white",
+            fg="#333333",
             command=lambda: self.start_quiz(50),
             padx=20,
             pady=15
@@ -951,7 +951,7 @@ class DivisionPracticeGUI:
             text="닫기",
             font=self.button_font,
             bg="#FF6B6B",
-            fg="white",
+            fg="#333333",
             command=history_window.destroy,
             padx=30,
             pady=5
