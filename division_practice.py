@@ -1129,7 +1129,7 @@ def display_division_visual(dividend, divisor, quotient, fruit):
 
     # 나누기 설명
     print(f"👉 {dividend}개를 {divisor}명에게 똑같이 나눠주면?")
-    print(f"   ({divisor}개씩 묶으면 몇 묶음이 될까요?)\n")
+    print(f"   (한 사람당 몇 개씩 받을까요?)\n")
 
 def show_answer_visual(dividend, divisor, quotient, fruit):
     """
