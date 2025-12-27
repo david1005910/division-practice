@@ -1062,8 +1062,74 @@ DIFFICULTY_SETTINGS = {
         "max_divisor": 12,
         "max_quotient": 12,
         "description": "1~100 범위, 구구단 활용"
+    },
+    5: {  # 혼합
+        "name": "혼합 🎲",
+        "max_dividend": 144,
+        "max_divisor": 12,
+        "max_quotient": 12,
+        "description": "나누는 수를 직접 선택하여 섞어서 연습"
     }
 }
+
+def select_hybrid_divisors():
+    """
+    혼합 모드에서 나누는 수를 선택합니다.
+    """
+    print("\n" + "🎲" * 20)
+    print("\n   🎲 나누는 수 선택 🎲\n")
+    print("🎲" * 20)
+
+    print("\n연습하고 싶은 나누는 수를 선택하세요!")
+    print("(여러 개 선택 가능, 쉼표로 구분)\n")
+
+    print("  2 - 2로 나누기 (2, 4, 6, 8, ...)")
+    print("  3 - 3으로 나누기 (3, 6, 9, 12, ...)")
+    print("  4 - 4로 나누기 (4, 8, 12, 16, ...)")
+    print("  5 - 5로 나누기 (5, 10, 15, 20, ...)")
+    print("  6 - 6으로 나누기 (6, 12, 18, 24, ...)")
+    print("  7 - 7로 나누기 (7, 14, 21, 28, ...)")
+    print("  8 - 8로 나누기 (8, 16, 24, 32, ...)")
+    print("  9 - 9로 나누기 (9, 18, 27, 36, ...)")
+
+    print("\n" + "-" * 40)
+    print("💡 예시: 2,3,5 → 2, 3, 5로 나누는 문제가 섞여서 나와요!")
+    print("💡 전체 선택: all 또는 a")
+    print("-" * 40)
+
+    while True:
+        choice = input("\n나누는 수를 입력하세요: ").strip().lower()
+
+        if choice in ['all', 'a', '전체']:
+            selected = [2, 3, 4, 5, 6, 7, 8, 9]
+            print(f"\n✅ 전체 선택: {selected}")
+            return selected
+
+        try:
+            # 쉼표 또는 공백으로 구분
+            parts = choice.replace(' ', ',').split(',')
+            selected = []
+            for p in parts:
+                p = p.strip()
+                if p:
+                    num = int(p)
+                    if 2 <= num <= 9:
+                        if num not in selected:
+                            selected.append(num)
+                    else:
+                        print(f"⚠️ {num}은(는) 2~9 범위가 아니에요. 건너뜁니다.")
+
+            if selected:
+                selected.sort()
+                print(f"\n✅ 선택한 나누는 수: {selected}")
+                confirm = input("이대로 진행할까요? (y/n): ").strip().lower()
+                if confirm == 'y':
+                    return selected
+            else:
+                print("❌ 최소 하나 이상 선택해주세요!")
+
+        except ValueError:
+            print("❌ 숫자를 입력해주세요! (예: 2,3,5)")
 
 def select_difficulty():
     """
@@ -1080,18 +1146,19 @@ def select_difficulty():
     print("\n" + "-" * 40)
 
     while True:
-        choice = input("\n난이도를 선택하세요 (1-4): ").strip()
-        if choice in ['1', '2', '3', '4']:
+        choice = input("\n난이도를 선택하세요 (1-5): ").strip()
+        if choice in ['1', '2', '3', '4', '5']:
             level = int(choice)
             print(f"\n✅ '{DIFFICULTY_SETTINGS[level]['name']}' 난이도를 선택했어요!")
             return level
         else:
-            print("❌ 1, 2, 3, 4 중에서 선택해주세요!")
+            print("❌ 1, 2, 3, 4, 5 중에서 선택해주세요!")
 
-def get_division_problems(count=50, difficulty=2):
+def get_division_problems(count=50, difficulty=2, divisors=None):
     """
     나머지가 없는 나눗셈 문제를 생성합니다.
     난이도에 따라 숫자 범위가 달라집니다.
+    divisors: 혼합 모드에서 사용할 나누는 수 리스트 (예: [2, 3, 5])
     """
     settings = DIFFICULTY_SETTINGS.get(difficulty, DIFFICULTY_SETTINGS[2])
 
@@ -1103,11 +1170,21 @@ def get_division_problems(count=50, difficulty=2):
 
     # 가능한 모든 나눗셈 조합 찾기
     valid_combinations = []
-    for divisor in range(1, max_divisor + 1):
-        for quotient in range(1, max_quotient + 1):
-            dividend = divisor * quotient
-            if dividend <= max_dividend:
-                valid_combinations.append((dividend, divisor, quotient))
+
+    if divisors:
+        # 혼합 모드: 선택한 나누는 수만 사용
+        for divisor in divisors:
+            for quotient in range(1, max_quotient + 1):
+                dividend = divisor * quotient
+                if dividend <= max_dividend:
+                    valid_combinations.append((dividend, divisor, quotient))
+    else:
+        # 일반 모드
+        for divisor in range(1, max_divisor + 1):
+            for quotient in range(1, max_quotient + 1):
+                dividend = divisor * quotient
+                if dividend <= max_dividend:
+                    valid_combinations.append((dividend, divisor, quotient))
 
     # 문제 생성
     for _ in range(count):
@@ -1475,6 +1552,11 @@ def main():
             # 난이도 선택
             difficulty = select_difficulty()
 
+            # 혼합 모드일 경우 나누는 수 선택
+            divisors = None
+            if difficulty == 5:
+                divisors = select_hybrid_divisors()
+
             # 타이머 선택
             timer_level = select_timer()
 
@@ -1486,7 +1568,7 @@ def main():
             else:
                 count = 100
 
-            problems = get_division_problems(count, difficulty)
+            problems = get_division_problems(count, difficulty, divisors)
             correct, total, wrong, elapsed_time = run_quiz(problems, difficulty, timer_level)
             show_results(correct, total, wrong, elapsed_time, difficulty, timer_level)
 
