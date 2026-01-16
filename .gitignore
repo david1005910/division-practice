@@ -1,0 +1,13 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Data files (user-specific)
+scores.json
+gui_scores.json
+badges.json
+daily.json
+
+# macOS
+.DS_Store
