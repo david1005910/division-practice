@@ -1,0 +1,846 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#10a37f">
+    <title>🤖 Voice RAG + GPT</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(180deg, #0f0f23 0%, #1a1a2e 100%);
+            min-height: 100vh;
+            color: white;
+            overflow-x: hidden;
+        }
+        
+        .app {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            max-width: 100%;
+        }
+        
+        /* 헤더 */
+        .header {
+            background: linear-gradient(135deg, #10a37f, #1a7f5a);
+            padding: 15px 20px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        }
+        
+        .header h1 {
+            font-size: 1.3rem;
+            margin-bottom: 5px;
+        }
+        
+        .header .status {
+            font-size: 0.75rem;
+            opacity: 0.9;
+        }
+        
+        .status-dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #ff4757;
+            margin-right: 5px;
+        }
+        
+        .status-dot.ok {
+            background: #2ed573;
+        }
+        
+        /* 탭 */
+        .tabs {
+            display: flex;
+            background: #1a1a2e;
+            border-bottom: 1px solid #333;
+        }
+        
+        .tab {
+            flex: 1;
+            padding: 12px;
+            text-align: center;
+            background: transparent;
+            border: none;
+            color: #888;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .tab.active {
+            color: #10a37f;
+            border-bottom: 2px solid #10a37f;
+        }
+        
+        /* 채팅 영역 */
+        .chat-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        
+        .message {
+            max-width: 85%;
+            padding: 12px 16px;
+            border-radius: 18px;
+            line-height: 1.5;
+            font-size: 0.95rem;
+            word-wrap: break-word;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .message.user {
+            background: linear-gradient(135deg, #10a37f, #1a7f5a);
+            align-self: flex-end;
+            border-bottom-right-radius: 5px;
+        }
+        
+        .message.bot {
+            background: #2a2a4a;
+            align-self: flex-start;
+            border-bottom-left-radius: 5px;
+            border: 1px solid #333;
+        }
+        
+        .message .sources {
+            font-size: 0.75rem;
+            color: #888;
+            margin-top: 8px;
+            padding-top: 8px;
+            border-top: 1px solid #444;
+        }
+        
+        .message-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+        }
+        
+        .message-actions button {
+            background: rgba(16, 163, 127, 0.2);
+            border: 1px solid #10a37f;
+            color: #10a37f;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            cursor: pointer;
+        }
+        
+        /* 로딩 */
+        .typing {
+            display: flex;
+            gap: 4px;
+            padding: 15px;
+        }
+        
+        .typing span {
+            width: 8px;
+            height: 8px;
+            background: #10a37f;
+            border-radius: 50%;
+            animation: bounce 1.4s infinite ease-in-out;
+        }
+        
+        .typing span:nth-child(1) { animation-delay: 0s; }
+        .typing span:nth-child(2) { animation-delay: 0.2s; }
+        .typing span:nth-child(3) { animation-delay: 0.4s; }
+        
+        @keyframes bounce {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1); }
+        }
+        
+        /* 입력 영역 */
+        .input-container {
+            background: #0f0f23;
+            padding: 15px;
+            border-top: 1px solid #333;
+        }
+        
+        .input-row {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        .voice-btn {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            border: none;
+            background: linear-gradient(135deg, #10a37f, #1a7f5a);
+            color: white;
+            font-size: 1.3rem;
+            cursor: pointer;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+        
+        .voice-btn:active {
+            transform: scale(0.95);
+        }
+        
+        .voice-btn.recording {
+            background: linear-gradient(135deg, #ff4757, #ff6b81);
+            animation: pulse 1s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(255, 71, 87, 0.4); }
+            50% { box-shadow: 0 0 0 15px rgba(255, 71, 87, 0); }
+        }
+        
+        .input-wrapper {
+            flex: 1;
+            display: flex;
+            background: #1a1a2e;
+            border-radius: 25px;
+            border: 2px solid #333;
+            overflow: hidden;
+        }
+        
+        .input-wrapper:focus-within {
+            border-color: #10a37f;
+        }
+        
+        .input-wrapper input {
+            flex: 1;
+            padding: 12px 15px;
+            background: transparent;
+            border: none;
+            color: white;
+            font-size: 1rem;
+            outline: none;
+        }
+        
+        .input-wrapper input::placeholder {
+            color: #666;
+        }
+        
+        .send-btn {
+            padding: 12px 20px;
+            background: #10a37f;
+            border: none;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        
+        .send-btn:disabled {
+            opacity: 0.5;
+        }
+        
+        /* 문서 관리 */
+        .docs-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px;
+            display: none;
+        }
+        
+        .docs-container.active {
+            display: block;
+        }
+        
+        .doc-input-area {
+            margin-bottom: 15px;
+        }
+        
+        .doc-input-area input,
+        .doc-input-area textarea {
+            width: 100%;
+            padding: 12px;
+            background: #1a1a2e;
+            border: 1px solid #333;
+            border-radius: 10px;
+            color: white;
+            font-size: 0.95rem;
+            margin-bottom: 10px;
+        }
+        
+        .doc-input-area textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+        
+        .doc-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .doc-buttons button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 10px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 0.85rem;
+        }
+        
+        .btn-add {
+            background: #10a37f;
+            color: white;
+        }
+        
+        .btn-refresh {
+            background: #333;
+            color: white;
+        }
+        
+        .btn-clear {
+            background: #ff4757;
+            color: white;
+        }
+        
+        .doc-list {
+            margin-top: 15px;
+        }
+        
+        .doc-item {
+            background: #1a1a2e;
+            padding: 12px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            border-left: 3px solid #10a37f;
+        }
+        
+        .doc-item-id {
+            color: #10a37f;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+        
+        .doc-item-text {
+            color: #ccc;
+            font-size: 0.9rem;
+            margin-top: 5px;
+        }
+        
+        .doc-item-delete {
+            margin-top: 8px;
+            padding: 5px 15px;
+            background: #ff4757;
+            border: none;
+            border-radius: 5px;
+            color: white;
+            font-size: 0.75rem;
+            cursor: pointer;
+        }
+        
+        /* 설정 모달 */
+        .settings-btn {
+            position: fixed;
+            bottom: 100px;
+            right: 15px;
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background: #333;
+            border: none;
+            color: white;
+            font-size: 1.2rem;
+            cursor: pointer;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        }
+        
+        .empty-state {
+            text-align: center;
+            color: #666;
+            padding: 40px 20px;
+        }
+        
+        .empty-state .icon {
+            font-size: 3rem;
+            margin-bottom: 15px;
+        }
+        
+        /* 서버 설정 */
+        .server-config {
+            background: #1a1a2e;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .server-config label {
+            display: block;
+            color: #888;
+            font-size: 0.8rem;
+            margin-bottom: 5px;
+        }
+        
+        .server-config input {
+            width: 100%;
+            padding: 10px;
+            background: #0f0f23;
+            border: 1px solid #333;
+            border-radius: 8px;
+            color: white;
+            font-size: 0.9rem;
+        }
+        
+        .server-config button {
+            margin-top: 10px;
+            padding: 10px 20px;
+            background: #10a37f;
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <!-- 헤더 -->
+        <div class="header">
+            <h1>🤖 Voice RAG + GPT</h1>
+            <div class="status">
+                <span class="status-dot" id="statusDot"></span>
+                <span id="statusText">연결 확인 중...</span>
+                <span> | 📚 <span id="docCount">0</span>개 문서</span>
+            </div>
+        </div>
+        
+        <!-- 탭 -->
+        <div class="tabs">
+            <button class="tab active" onclick="showTab('chat')">💬 채팅</button>
+            <button class="tab" onclick="showTab('docs')">📄 문서</button>
+            <button class="tab" onclick="showTab('settings')">⚙️ 설정</button>
+        </div>
+        
+        <!-- 채팅 탭 -->
+        <div class="chat-container" id="chatContainer">
+            <div class="message bot">
+                안녕하세요! 저는 RAG 기반 GPT 어시스턴트예요. 🤖<br><br>
+                📄 문서 탭에서 문서를 추가하고,<br>
+                🎤 버튼을 눌러 음성으로 질문하세요!
+            </div>
+        </div>
+        
+        <!-- 문서 탭 -->
+        <div class="docs-container" id="docsContainer">
+            <div class="doc-input-area">
+                <input type="text" id="docId" placeholder="문서 ID (선택사항)">
+                <textarea id="docText" placeholder="문서 내용을 입력하세요..."></textarea>
+                <div class="doc-buttons">
+                    <button class="btn-add" onclick="addDocument()">➕ 추가</button>
+                    <button class="btn-refresh" onclick="loadDocuments()">🔄 새로고침</button>
+                    <button class="btn-clear" onclick="clearDocuments()">🗑️ 전체삭제</button>
+                </div>
+            </div>
+            <div class="doc-list" id="docList">
+                <div class="empty-state">
+                    <div class="icon">📄</div>
+                    <p>저장된 문서가 없습니다</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 설정 탭 -->
+        <div class="docs-container" id="settingsContainer">
+            <div class="server-config">
+                <label>서버 주소</label>
+                <input type="text" id="serverUrl" placeholder="http://localhost:5001">
+                <button onclick="saveSettings()">💾 저장</button>
+            </div>
+            
+            <div class="server-config">
+                <label>음성 자동 읽기</label>
+                <select id="autoSpeak" style="width:100%;padding:10px;background:#0f0f23;border:1px solid #333;border-radius:8px;color:white;">
+                    <option value="true">켜기</option>
+                    <option value="false">끄기</option>
+                </select>
+            </div>
+            
+            <div class="server-config">
+                <label>검색 결과 수</label>
+                <select id="numResults" style="width:100%;padding:10px;background:#0f0f23;border:1px solid #333;border-radius:8px;color:white;">
+                    <option value="2">2개</option>
+                    <option value="3" selected>3개</option>
+                    <option value="5">5개</option>
+                </select>
+            </div>
+            
+            <div class="server-config">
+                <label>연결 테스트</label>
+                <button onclick="testConnection()">🔌 연결 테스트</button>
+                <p id="testResult" style="margin-top:10px;font-size:0.85rem;color:#888;"></p>
+            </div>
+        </div>
+        
+        <!-- 입력 영역 -->
+        <div class="input-container" id="inputContainer">
+            <div class="input-row">
+                <button class="voice-btn" id="voiceBtn" onclick="toggleVoice()">🎤</button>
+                <div class="input-wrapper">
+                    <input type="text" id="userInput" placeholder="질문을 입력하세요...">
+                    <button class="send-btn" id="sendBtn" onclick="sendMessage()">전송</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ===== 설정 =====
+        let SERVER_URL = localStorage.getItem('serverUrl') || 'http://localhost:5001';
+        let recognition = null;
+        let isRecording = false;
+        let isProcessing = false;
+        
+        // 초기화
+        document.getElementById('serverUrl').value = SERVER_URL;
+        initSpeechRecognition();
+        checkConnection();
+        
+        // ===== 탭 전환 =====
+        function showTab(tabName) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.docs-container').forEach(c => c.classList.remove('active'));
+            document.getElementById('chatContainer').style.display = 'none';
+            document.getElementById('docsContainer').classList.remove('active');
+            document.getElementById('settingsContainer').classList.remove('active');
+            document.getElementById('inputContainer').style.display = 'none';
+            
+            event.target.classList.add('active');
+            
+            if (tabName === 'chat') {
+                document.getElementById('chatContainer').style.display = 'flex';
+                document.getElementById('inputContainer').style.display = 'block';
+            } else if (tabName === 'docs') {
+                document.getElementById('docsContainer').classList.add('active');
+                loadDocuments();
+            } else if (tabName === 'settings') {
+                document.getElementById('settingsContainer').classList.add('active');
+            }
+        }
+        
+        // ===== 서버 연결 =====
+        async function checkConnection() {
+            try {
+                const res = await fetch(SERVER_URL + '/health', { timeout: 5000 });
+                const data = await res.json();
+                
+                document.getElementById('statusDot').classList.add('ok');
+                document.getElementById('statusText').textContent = '연결됨';
+                document.getElementById('docCount').textContent = data.documents || 0;
+                return true;
+            } catch (e) {
+                document.getElementById('statusDot').classList.remove('ok');
+                document.getElementById('statusText').textContent = '연결 안 됨';
+                return false;
+            }
+        }
+        
+        async function testConnection() {
+            const resultEl = document.getElementById('testResult');
+            resultEl.textContent = '테스트 중...';
+            resultEl.style.color = '#888';
+            
+            try {
+                const url = document.getElementById('serverUrl').value;
+                const res = await fetch(url + '/health');
+                const data = await res.json();
+                
+                resultEl.textContent = '✅ 연결 성공! 문서: ' + data.documents + '개, LLM: ' + (data.llm_available ? '사용가능' : '사용불가');
+                resultEl.style.color = '#2ed573';
+            } catch (e) {
+                resultEl.textContent = '❌ 연결 실패: ' + e.message;
+                resultEl.style.color = '#ff4757';
+            }
+        }
+        
+        function saveSettings() {
+            SERVER_URL = document.getElementById('serverUrl').value;
+            localStorage.setItem('serverUrl', SERVER_URL);
+            alert('설정이 저장되었습니다!');
+            checkConnection();
+        }
+        
+        // ===== 음성 인식 =====
+        function initSpeechRecognition() {
+            if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                recognition = new SpeechRecognition();
+                recognition.continuous = false;
+                recognition.interimResults = true;
+                recognition.lang = 'ko-KR';
+                
+                recognition.onresult = (event) => {
+                    const transcript = event.results[0][0].transcript;
+                    document.getElementById('userInput').value = transcript;
+                };
+                
+                recognition.onend = () => {
+                    isRecording = false;
+                    document.getElementById('voiceBtn').classList.remove('recording');
+                    const input = document.getElementById('userInput').value.trim();
+                    if (input && !isProcessing) {
+                        sendMessage();
+                    }
+                };
+                
+                recognition.onerror = (event) => {
+                    isRecording = false;
+                    document.getElementById('voiceBtn').classList.remove('recording');
+                    if (event.error === 'not-allowed') {
+                        alert('마이크 권한을 허용해주세요!');
+                    }
+                };
+            }
+        }
+        
+        function toggleVoice() {
+            if (isProcessing) return;
+            
+            if (!recognition) {
+                alert('이 브라우저는 음성 인식을 지원하지 않습니다.\nChrome 브라우저를 사용해주세요.');
+                return;
+            }
+            
+            if (isRecording) {
+                recognition.stop();
+            } else {
+                recognition.start();
+                isRecording = true;
+                document.getElementById('voiceBtn').classList.add('recording');
+            }
+        }
+        
+        // ===== 음성 출력 =====
+        function speak(text) {
+            if (!('speechSynthesis' in window)) return;
+            if (document.getElementById('autoSpeak').value !== 'true') return;
+            
+            speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'ko-KR';
+            utterance.rate = 1.0;
+            speechSynthesis.speak(utterance);
+        }
+        
+        function stopSpeaking() {
+            if ('speechSynthesis' in window) {
+                speechSynthesis.cancel();
+            }
+        }
+        
+        // ===== 메시지 =====
+        function addMessage(text, isUser, sources = null) {
+            const container = document.getElementById('chatContainer');
+            const msgDiv = document.createElement('div');
+            msgDiv.className = 'message ' + (isUser ? 'user' : 'bot');
+            
+            let html = text.replace(/\n/g, '<br>');
+            
+            if (!isUser) {
+                if (sources && sources.length > 0) {
+                    html += '<div class="sources">📚 참고: ' + sources.map(s => s.id).join(', ') + '</div>';
+                }
+                html += '<div class="message-actions">';
+                html += '<button onclick="speak(\'' + text.replace(/'/g, "\\'").replace(/\n/g, ' ') + '\')">🔊 읽기</button>';
+                html += '<button onclick="stopSpeaking()">⏹️ 중지</button>';
+                html += '</div>';
+            }
+            
+            msgDiv.innerHTML = html;
+            container.appendChild(msgDiv);
+            container.scrollTop = container.scrollHeight;
+        }
+        
+        function showTyping() {
+            const container = document.getElementById('chatContainer');
+            const typingDiv = document.createElement('div');
+            typingDiv.className = 'message bot typing';
+            typingDiv.id = 'typingIndicator';
+            typingDiv.innerHTML = '<span></span><span></span><span></span>';
+            container.appendChild(typingDiv);
+            container.scrollTop = container.scrollHeight;
+        }
+        
+        function hideTyping() {
+            const typing = document.getElementById('typingIndicator');
+            if (typing) typing.remove();
+        }
+        
+        // ===== 메시지 전송 =====
+        async function sendMessage() {
+            const input = document.getElementById('userInput');
+            const question = input.value.trim();
+            
+            if (!question || isProcessing) return;
+            
+            isProcessing = true;
+            document.getElementById('sendBtn').disabled = true;
+            document.getElementById('voiceBtn').disabled = true;
+            
+            addMessage(question, true);
+            input.value = '';
+            showTyping();
+            
+            try {
+                const numResults = document.getElementById('numResults').value;
+                
+                const response = await fetch(SERVER_URL + '/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        question: question,
+                        n_results: parseInt(numResults)
+                    })
+                });
+                
+                hideTyping();
+                
+                if (!response.ok) {
+                    throw new Error('서버 오류: ' + response.status);
+                }
+                
+                const data = await response.json();
+                addMessage(data.answer, false, data.sources);
+                speak(data.answer);
+                checkConnection();
+                
+            } catch (error) {
+                hideTyping();
+                addMessage('❌ 오류: ' + error.message + '\n\n설정에서 서버 주소를 확인해주세요.', false);
+            } finally {
+                isProcessing = false;
+                document.getElementById('sendBtn').disabled = false;
+                document.getElementById('voiceBtn').disabled = false;
+            }
+        }
+        
+        // ===== 문서 관리 =====
+        async function loadDocuments() {
+            try {
+                const res = await fetch(SERVER_URL + '/list?limit=50');
+                const data = await res.json();
+                
+                document.getElementById('docCount').textContent = data.total;
+                
+                const listEl = document.getElementById('docList');
+                
+                if (data.documents && data.documents.length > 0) {
+                    listEl.innerHTML = data.documents.map(doc => `
+                        <div class="doc-item">
+                            <div class="doc-item-id">🏷️ ${doc.id}</div>
+                            <div class="doc-item-text">${doc.text}</div>
+                            <button class="doc-item-delete" onclick="deleteDocument('${doc.id}')">🗑️ 삭제</button>
+                        </div>
+                    `).join('');
+                } else {
+                    listEl.innerHTML = `
+                        <div class="empty-state">
+                            <div class="icon">📄</div>
+                            <p>저장된 문서가 없습니다</p>
+                        </div>
+                    `;
+                }
+            } catch (e) {
+                document.getElementById('docList').innerHTML = `
+                    <div class="empty-state">
+                        <div class="icon">❌</div>
+                        <p>서버에 연결할 수 없습니다</p>
+                    </div>
+                `;
+            }
+        }
+        
+        async function addDocument() {
+            const text = document.getElementById('docText').value.trim();
+            if (!text) {
+                alert('문서 내용을 입력하세요');
+                return;
+            }
+            
+            const id = document.getElementById('docId').value.trim() || undefined;
+            
+            try {
+                const res = await fetch(SERVER_URL + '/add', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text, id })
+                });
+                
+                const data = await res.json();
+                alert('✅ 문서 추가됨: ' + data.id);
+                
+                document.getElementById('docText').value = '';
+                document.getElementById('docId').value = '';
+                loadDocuments();
+                checkConnection();
+            } catch (e) {
+                alert('❌ 추가 실패: ' + e.message);
+            }
+        }
+        
+        async function deleteDocument(id) {
+            if (!confirm('삭제할까요?')) return;
+            
+            try {
+                await fetch(SERVER_URL + '/delete', {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id })
+                });
+                loadDocuments();
+                checkConnection();
+            } catch (e) {
+                alert('❌ 삭제 실패: ' + e.message);
+            }
+        }
+        
+        async function clearDocuments() {
+            if (!confirm('모든 문서를 삭제할까요?')) return;
+            
+            try {
+                await fetch(SERVER_URL + '/clear', { method: 'DELETE' });
+                loadDocuments();
+                checkConnection();
+            } catch (e) {
+                alert('❌ 삭제 실패: ' + e.message);
+            }
+        }
+        
+        // ===== 이벤트 =====
+        document.getElementById('userInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && !isProcessing) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+        
+        // 주기적 연결 확인
+        setInterval(checkConnection, 30000);
+    </script>
+</body>
+</html>
