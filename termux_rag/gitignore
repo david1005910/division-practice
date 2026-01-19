@@ -1,0 +1,13 @@
+# API 키 파일 (절대 GitHub에 올리지 않음!)
+.env
+
+# Python 캐시
+__pycache__/
+*.py[cod]
+
+# 데이터 파일
+*.bin
+rag_docs.json
+
+# 로그
+*.log
